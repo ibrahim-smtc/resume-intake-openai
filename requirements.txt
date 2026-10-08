@@ -6,3 +6,4 @@ python-multipart>=0.0.20     # file uploads
 python-dotenv>=1.0           # reads .env locally
 pypdf>=6                     # reads the text of a PDF
 mcp>=1.29,<2                 # the MCP server SDK; 2.x changes its API
+openai-agents>=0.23,<0.24     # the recruiter agent (OpenAI Agents SDK); 0.x releases change the API

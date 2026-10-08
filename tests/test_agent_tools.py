@@ -139,8 +139,8 @@ check("a bad link gives decision 'error' with the reason", o["bad_url"]["decisio
 s = o["summary"]
 check("the summary counts what came in (2 files: 1 accepted, 1 junk, 1 profile created)", s["files_received"] == 2 and s["screening"] == {"accepted": 1, "junk": 1} and s["profiles"] == {"created": 1}, s)
 rec = o["recent"]["intakes"]
-check("recent intakes: newest first, with the channel 'perfox agent'", len(rec) == 2 and rec[0]["file"] == "invoice.pdf" and rec[1]["candidate_id"].startswith("CAN-STUB")
-      and all(x["channel"] == "perfox agent" for x in rec), rec)
+check("recent intakes: newest first, with the channel 'openai agent'", len(rec) == 2 and rec[0]["file"] == "invoice.pdf" and rec[1]["candidate_id"].startswith("CAN-STUB")
+      and all(x["channel"] == "openai agent" for x in rec), rec)
 
 fid = o["fid"]
 check("check_junk accepts a resume and hands out a file_id", o["step_junk"]["decision"] == "accepted" and fid)

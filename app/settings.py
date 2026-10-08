@@ -4,7 +4,7 @@ Environment Variables. Names and meanings are listed in .env.example.
 
 Only settings that are fixed for the life of the process live here. A few are deliberately read at the moment they are
 used, so they can change without a restart: QUESTLIGHT_* (app/intake/questlight.py), MCP_TOKEN and MCP_FILE_HOSTS
-(app/agent), PERFOX_WEBHOOK_* (app/agent/chat_bridge.py), AUDIT_DB (app/observability/audit.py).
+(app/agent), OPENAI_* and AGENT_* (app/agent/openai_agent.py), AUDIT_DB (app/observability/audit.py).
 """
 import os
 from pathlib import Path

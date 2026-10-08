@@ -11,3 +11,4 @@ data
 __pycache__
 requirements-dev.txt
 run.py
+scripts

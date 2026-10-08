@@ -314,7 +314,10 @@
     let maxMb = 5;         // the server's upload limit, read from /api/config (4 on Vercel)
     let attached = null;   // the resume waiting to be sent
     let busy = false;      // the parser takes one file at a time, so one upload at a time
-    let agentMode = false; // true when the server has a Perfox webhook: the text box then talks to the agent
+    let agentMode = false; // true when the server has an OpenAI key: the text box then talks to the agent
+    const HISTORY = 8;     // the last messages sent with each turn (the server keeps no conversation)
+    const history = [];    // {role: "user" | "assistant", content}
+    const contexts = [];   // the server's [context] lines: the files taken in so far, newest last
     const sessionId = (window.crypto && crypto.randomUUID ? crypto.randomUUID() : String(Math.random()).slice(2)).replace(/-/g, "");
     fetch("/api/config").then(r => r.json()).then(c => {
       agentMode = !!c.agent;
@@ -437,11 +440,12 @@
       return item;
     }
 
-    // ---- through the Perfox agent: the message (and the resume, which stays on our server) go to /api/chat ----
+    // ---- through the agent: the message, the resume (it stays on our server), the last messages and the [context]
+    // lines go to /api/chat ----
     async function chat(words, file) {
       if (file) addUser(fileItem(file));
       const working = el("div", undefined, "working");
-      working.append(el("div", undefined, "spin"), el("span", file ? "The agent is reading the resume… this can take up to a minute" : "Thinking…"));
+      working.append(el("div", undefined, "spin"), el("span", file ? "Reading the file and updating Questlight… this can take about 20 seconds" : "Thinking…"));
       const bubble = addBot(working);
       setBusy(true);
 
@@ -450,6 +454,8 @@
         const body = new FormData();
         body.append("session_id", sessionId);
         body.append("message", words);
+        body.append("history", JSON.stringify(history.slice(-HISTORY)));
+        body.append("context", contexts.slice(-5).join(String.fromCharCode(10)));
         if (file) body.append("file", file);
         const resp = await fetch("/api/chat", { method: "POST", body });
         r = await resp.json().catch(() => ({}));
@@ -458,6 +464,15 @@
         r = { ok: false, error: "couldn't reach the server (" + err.message + ")" };
       }
       bubble.replaceChildren(r.ok ? markdown(r.reply) : el("div", r.error || "something went wrong", "err"));
+      if (r.ok) {
+        history.push({ role: "user", content: words || (file ? "[attached " + file.name + "]" : "") }, { role: "assistant", content: r.reply });
+        for (const line of r.context || []) {
+          const ref = (line.match(/(?:file|jd)_id=\w+/) || [line])[0];
+          const at = contexts.findIndex(c => c.includes(ref));
+          if (at >= 0) contexts.splice(at, 1);
+          contexts.push(line);
+        }
+      }
       setBusy(false);
       bubble.parentElement.scrollIntoView({ block: "start" });
     }

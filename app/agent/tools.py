@@ -1,5 +1,5 @@
-"""The tools the Perfox agent can call (MCP). They hold no logic of their own: they run the pipeline's steps
-(app/pipeline.py) and read the audit log.
+"""The tools, served over MCP (/mcp) and called by the in-app agent through app/agent/agent_tools.py. They hold no logic
+of their own: they run the pipeline's steps (app/pipeline.py) and read the audit log.
 
 - process_resume: the whole pipeline in one call, in a fixed order. The default.
 - provide_missing_details: when a resume lacks something Questlight requires (a job title, say) the recruiter is asked,
@@ -17,20 +17,20 @@
   Questlight (read-only); then, once the recruiter agrees, put chosen ones on the job at the Screening stage.
 - get_intake_summary, list_recent_intakes: read the audit log. list_open_roles: Questlight's open jobs.
 
-The text in each tool's docstring is what the agent reads. After changing one, click Rediscover on the integration in
-Perfox. Add every new tool to tool_guide.py too.
+The text in each tool's docstring is what an MCP client's agent reads (the in-app agent uses the short descriptions
+in agent_tools.py instead). Add every new tool to tool_guide.py too.
 """
 import contextlib
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 from app import job_pipeline, pipeline, settings
-from app.agent import chat_bridge, downloads, formatting, intakes
+from app.agent import downloads, formatting, intakes, uploads
 from app.agent.mcp_app import mcp
 from app.intake import candidates, corrections, jobs, matching, questlight
 from app.observability import audit, tracing
 
-CHANNEL = "perfox agent"  # the audit log's channel column for files that came in through the agent
+CHANNEL = "openai agent"  # the audit log's channel column for files that came in through the agent
 
 
 @contextlib.asynccontextmanager
@@ -46,7 +46,7 @@ async def _traced(run: audit.Run, tool: str):
 
 
 def _upload_token(file_url: str):
-    return chat_bridge.token_of(file_url) if chat_bridge.is_link(file_url) else None
+    return uploads.token_of(file_url) if uploads.is_link(file_url) else None
 
 
 @mcp.tool()

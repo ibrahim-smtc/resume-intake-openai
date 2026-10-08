@@ -1,10 +1,10 @@
-"""The web app: the pages, the JSON APIs they use, and the Perfox agent's /mcp endpoint.
+"""The web app: the pages, the JSON APIs they use, the recruiter agent's chat, and the /mcp endpoint.
 
 Pages (app/static): /  the chat-style upload page,  /classic  the original one-button page,  /log  the audit log,
 /trace  per-step timings and tokens.
-APIs: POST /api/process (upload a resume straight into the pipeline), POST /api/chat (the page's text box, sent to the
-Perfox agent), GET /api/config, /api/tools, /api/log, /api/traces, /api/trace/{id}.
-Agent: POST /mcp, the MCP tools in app/agent/tools.py.
+APIs: POST /api/process (upload a resume straight into the pipeline), POST /api/chat (the page's text box, answered by
+the in-app agent, app/agent/openai_agent.py), GET /api/config, /api/tools, /api/log, /api/traces, /api/trace/{id}.
+MCP: POST /mcp, the same tools for any MCP client (app/agent/tools.py).
 
 Run locally with `python run.py`. On Vercel this module is the entrypoint (the `app` below).
 """
@@ -15,7 +15,7 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
 from app import pipeline, settings
-from app.agent import chat_bridge, mcp_app, tool_guide
+from app.agent import mcp_app, openai_agent, tool_guide
 from app.observability import audit, tracing
 from app.security import AccessGuard
 
@@ -62,14 +62,14 @@ def trace_page():
 
 @app.get("/api/config")
 def config():
-    """Tells the page how to work: through the Perfox agent (webhook configured) or straight into the pipeline."""
-    return {"agent": chat_bridge.configured(), "max_mb": settings.MAX_UPLOAD_MB}
+    """Tells the page how to work: through the agent (OPENAI_API_KEY set) or straight into the pipeline."""
+    return {"agent": openai_agent.configured(), "max_mb": settings.MAX_UPLOAD_MB}
 
 
 @app.get("/api/tools")
 def tools():
     """What the assistant can do, in plain words, for the page's /tools command (see app/agent/tool_guide.py)."""
-    return {"agent": chat_bridge.configured(), "groups": tool_guide.TOOL_GUIDE}
+    return {"agent": openai_agent.configured(), "groups": tool_guide.TOOL_GUIDE}
 
 
 @app.post("/api/process")
@@ -79,14 +79,17 @@ async def process(file: UploadFile = File(...)):
 
 
 @app.post("/api/chat")
-async def chat(message: str = Form(""), session_id: str = Form(""), file: UploadFile = File(None)):
-    """The page's text box, sent to the Perfox agent (see app/agent/chat_bridge.py). The resume, if any, stays here."""
-    if not chat_bridge.configured():
-        raise HTTPException(status_code=503, detail="PERFOX_WEBHOOK_URL and PERFOX_WEBHOOK_SECRET are not set")
+async def chat(message: str = Form(""), session_id: str = Form(""), history: str = Form(""), context: str = Form(""),
+               file: UploadFile = File(None)):
+    """The page's text box, answered by the agent (app/agent/openai_agent.py). history is the page's last messages (JSON,
+    text only) and context its [context] lines; the conversation is not kept on the server. session_id is accepted for
+    the page's sake and not used."""
+    if not openai_agent.configured():
+        raise HTTPException(status_code=503, detail="OPENAI_API_KEY is not set")
     upload = None
     if file is not None and file.filename:
         upload = (Path(file.filename).name, await file.read())
-    return await chat_bridge.send(session_id, message, upload)
+    return await openai_agent.chat(message, history, context, upload)
 
 
 @app.get("/api/log")
@@ -107,5 +110,5 @@ def trace_detail(trace_id: str):
     return found
 
 
-# ---------- the Perfox agent: POST /mcp ----------
+# ---------- MCP clients: POST /mcp ----------
 mcp_app.attach(app)

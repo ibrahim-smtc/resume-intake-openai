@@ -4,7 +4,7 @@
 
 The blocks themselves are in app/intake (junk rules, the two parsers, the Questlight profile call, the job matching);
 this module runs them in order, writes the audit log and the trace as it goes, and shapes the result. The upload page, the
-Perfox agent's tools (app/agent) and the tests all call process_file() or the individual steps below.
+agent's tools (app/agent) and the tests all call process_file() or the individual steps below.
 
 AI is used only to read the resume (the parser). Every other decision is plain code, including which jobs the
 candidate is put on for screening: the best 3 matches, no more.
@@ -255,7 +255,7 @@ async def run_pipeline(run: audit.Run, name: str, ext: str, data: bytes, state: 
 
 
 async def process_file(name: str, data: bytes, channel: str = audit.CHANNEL, state: dict | None = None) -> dict:
-    """Runs one file through the whole pipeline. Used by the upload page and by the Perfox agent's MCP tool.
+    """Runs one file through the whole pipeline. Used by the upload page and by the agent's tools.
     One file = one trace: every step runs in a span that records its time and, for LLM calls, tokens.
     state (optional): a dict this fills with the run, the resume text and the parsed JSON, so the agent's tools can go
     on with the same file (supplying a missing detail, then creating the profile). It never leaves the server."""

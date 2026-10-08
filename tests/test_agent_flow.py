@@ -1,6 +1,6 @@
 """The conversation flows the agent runs: a resume that lacks something Questlight requires (two jobs with no title), the recruiter
-supplying it, "go ahead without it", a parser that can't read the email, and what happened in the real chat: Perfox keeps only
-the chat MESSAGES between turns, so the agent has just the attachment's link and passes it (or its token) where a file_id belongs.
+supplying it, "go ahead without it", a parser that can't read the email, and an MCP client that has only the attachment's link
+from the chat and passes it (or its token) where a file_id belongs.
 Parser and Questlight are fake; the job list is hand-made."""
 import asyncio
 import json
@@ -22,7 +22,7 @@ NO_CONTACT = ("We couldn't find the following details in this resume: email, pho
 FULL = {**ROHIT, "name": "Parsed Name", "email": "parsed@example.com", "phoneNumber": "000"}   # what the parser finds once it is given contact lines
 fakes = ah.start({"harish": HARISH, "fill": HARISH, "incomplete": {"until_contact": NO_CONTACT, "then": FULL}, "stubborn": NO_CONTACT})
 
-from app.agent import chat_bridge, intakes  # noqa: E402
+from app.agent import intakes, uploads  # noqa: E402
 
 
 async def main():
@@ -69,7 +69,7 @@ async def main():
         n = len(fakes.creates)
         o["i4"] = await call("create_profile", file_id=i_fid)
         o["i4_applicant"] = fakes.creates[n] if len(fakes.creates) > n else None
-        link2 = chat_bridge.store_file("incomplete.pdf", (harness.RESUMES / "Rohit_Verma_Python_Backend.pdf").read_bytes())   # as in the real chat
+        link2 = uploads.store_file("incomplete.pdf", (harness.RESUMES / "Rohit_Verma_Python_Backend.pdf").read_bytes())   # as in the real chat
         c1 = await call("process_resume", file_url=link2)
         await call("provide_missing_details", file_id=c1["file_id"], answers=[{"id": "email", "value": "a.b@example.com"}, {"id": "phone", "value": "+91 90000 12345"}])
         o["i5"] = await call("process_resume", file_url=link2)   # the agent asks again later in the chat
@@ -80,7 +80,7 @@ async def main():
         o["s_retry"] = await call("provide_missing_details", file_id=s1["file_id"], answers=[])
 
         # 6. the real chat: the agent has only the attachment's link
-        link = chat_bridge.store_file("harish.pdf", (harness.RESUMES / "Rohit_Verma_Python_Backend.pdf").read_bytes())
+        link = uploads.store_file("harish.pdf", (harness.RESUMES / "Rohit_Verma_Python_Backend.pdf").read_bytes())
         token = link[len("intake-file://"):]
         o["l1"] = await call("process_resume", file_url=link, file_name="harish.pdf")
         before = len(fakes.parse_calls)
@@ -123,7 +123,7 @@ check("create_profile before the answers: refused, still nothing sent", o["early
 check("the recruiter's answers are applied, and nothing is written to Questlight by supplying them",
       o["ans"]["applied"] == ["job_title:1", "job_title:2"] and o["ans"]["rejected"] == [] and o["ans"]["info_complete"] is True and o["creates_before"] == 0, o["ans"])
 check("create_profile sends the recruiter's titles, not 'Not specified'", o["titles"] == ["Senior Data Engineer", "Data Engineer", "Data Engineer"], o["titles"])
-check("the profile's notes say it came in through the agent", "Source: resume intake, perfox agent" in fakes.creates[0]["additionalNotes"], fakes.creates[0]["additionalNotes"])
+check("the profile's notes say it came in through the agent", "Source: resume intake, openai agent" in fakes.creates[0]["additionalNotes"], fakes.creates[0]["additionalNotes"])
 check("the profile is created with nothing adjusted", o["c1"]["profile_created"] is True and o["c1"]["profile"]["adjusted"] == [] and o["c1"]["profile"]["candidate_id"], o["c1"])
 check("creating again returns the saved result and does NOT reach Questlight again", o["c2"]["profile"] == o["c1"]["profile"] and o["creates_after"] == 1, o["creates_after"])
 check("once created, answers are refused (no editing a created profile)", o["late"]["ok"] is False and "already exists" in o["late"]["error"], o["late"])

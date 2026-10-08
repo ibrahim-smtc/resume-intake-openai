@@ -33,7 +33,7 @@ check("read-only tools are NOT flagged as writing",
 client = TestClient(app)
 j = client.get("/api/tools").json()
 check("/api/tools serves the guide", j["groups"] == tool_guide.TOOL_GUIDE and j["agent"] is False)
-os.environ["PERFOX_WEBHOOK_URL"], os.environ["PERFOX_WEBHOOK_SECRET"] = "http://x", "y"
+os.environ["OPENAI_API_KEY"] = "sk-test"
 check("...and says whether the agent is connected", client.get("/api/tools").json()["agent"] is True)
 
 page = (ROOT / "app" / "static" / "index.html").read_text(encoding="utf-8")

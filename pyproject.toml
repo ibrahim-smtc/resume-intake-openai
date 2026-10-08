@@ -3,7 +3,7 @@
 [project]
 name = "resume-intake"
 version = "0.1.0"
-description = "AI resume intake agent for Questlight, with a Perfox agent front end"
+description = "AI resume intake agent for Questlight, with an in-app OpenAI agent"
 requires-python = ">=3.12"
 dependencies = [
     "fastapi>=0.115,<1",
@@ -13,6 +13,7 @@ dependencies = [
     "python-dotenv>=1.0",         # reads .env locally
     "pypdf>=6",                   # reads the text of a PDF
     "mcp>=1.29,<2",               # the MCP server SDK; 2.x changes its API
+    "openai-agents>=0.23,<0.24",  # the recruiter agent (OpenAI Agents SDK); 0.x releases change the API
 ]
 
 [tool.uv]

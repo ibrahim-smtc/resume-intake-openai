@@ -7,7 +7,7 @@ from urllib.parse import unquote, urlparse
 import httpx
 
 from app import settings
-from app.agent import chat_bridge
+from app.agent import uploads
 from app.intake import documents
 
 TIMEOUT_S = 30
@@ -15,8 +15,8 @@ TIMEOUT_S = 30
 
 async def download(url: str, file_name: str):
     """Fetches the file. Returns (bytes, file name, error)."""
-    if chat_bridge.is_link(url):  # a file the recruiter attached in the page's text box: it never left this server
-        stored = chat_bridge.load_file(url)
+    if uploads.is_link(url):  # a file the recruiter attached in the page's text box: it never left this server
+        stored = uploads.load_file(url)
         if not stored:
             return None, None, "that attached file is unknown or has expired (files are kept 30 minutes): ask the recruiter to attach it again"
         return stored[1], file_name_for(stored[0], stored[1]), None
@@ -46,7 +46,7 @@ async def download(url: str, file_name: str):
 def file_name_for(name: str, data: bytes) -> str:
     """Signed storage links often lack the extension, and the pipeline goes by it, so it is added from the content."""
     name = Path(name or "document").name
-    if Path(name).suffix.lower() in chat_bridge.ACCEPTED:
+    if Path(name).suffix.lower() in uploads.ACCEPTED:
         return name
     if data[:5] == b"%PDF-":
         return name + ".pdf"

@@ -1,10 +1,10 @@
-"""The MCP server the Perfox agent calls: the FastMCP object and its /mcp endpoint. The tools themselves are in tools.py.
+"""The MCP server for MCP clients: the FastMCP object and its /mcp endpoint. The tools themselves are in tools.py.
 
-Perfox's AI Agent node calls them over MCP (JSON-RPC on POST /mcp). The decision flags in the results (decision,
-profile_created, info_complete...) are what a Perfox Condition node can branch on as mcp_result.*.
+Any MCP client (an agent platform, an IDE...) can call them over JSON-RPC on POST /mcp. The chat page's own agent doesn't
+use /mcp: it calls the same functions in-process (app/agent/agent_tools.py).
 
-Security: every call needs "Authorization: Bearer <MCP_TOKEN>" (set MCP_TOKEN; register the same value in Perfox as the
-integration's bearer credential). With no MCP_TOKEN set, /mcp refuses everything.
+Security: every call needs "Authorization: Bearer <MCP_TOKEN>" (set MCP_TOKEN, and give the same value to the client as its
+bearer credential). With no MCP_TOKEN set, /mcp refuses everything.
 """
 import contextlib
 import hmac
@@ -20,7 +20,7 @@ mcp = FastMCP(
     "questlight-resume-intake",
     instructions="Resume intake for Questlight recruiters: screen a resume, create the candidate profile in "
                  "Questlight and match it to open roles; plus intake counts and recent uploads.",
-    stateless_http=True,  # Perfox calls are plain request/response, no session to keep
+    stateless_http=True,  # plain request/response, no session to keep
     json_response=True,
     # The SDK only accepts Host: localhost by default, which would reject every call through a tunnel or a real domain.
     # The bearer token below is the protection instead.

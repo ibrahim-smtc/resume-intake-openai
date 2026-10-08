@@ -1,7 +1,7 @@
 """The agent's working memory: the files it has taken in and where each one stands.
 
 The file, the parsed resume and every result stay here on the server; the agent only passes a short reference around, so
-candidate data never has to travel through the model. Perfox keeps only the chat MESSAGES between turns, not tool
+candidate data never has to travel through the model. Only the chat MESSAGES are kept between turns, not tool
 results, so a reference can be three things: the short file_id, the attachment's intake-file link, or just that link's
 token. All of them find the same file.
 
@@ -13,7 +13,7 @@ import time
 from collections import OrderedDict
 from pathlib import Path
 
-from app.agent import chat_bridge
+from app.agent import uploads
 from app.observability import audit
 
 TTL_S = 30 * 60
@@ -57,7 +57,7 @@ def find(ref):
     ref = str(ref or "").strip()
     intake = _intakes.get(ref)
     if not intake:
-        token = chat_bridge.token_of(ref)
+        token = uploads.token_of(ref)
         intake = _intakes.get(_by_upload.get(token)) if token else None
     return intake if intake and time.monotonic() - intake.born <= TTL_S else None
 

@@ -1,6 +1,6 @@
 """Who may reach what.
 
-/mcp (the Perfox agent's tools) is protected by its own bearer token, see app/agent/mcp_app.py. Everything else (the upload
+/mcp (the tools, for MCP clients) is protected by its own bearer token, see app/agent/mcp_app.py. Everything else (the upload
 page, the chat and upload APIs, the audit log and traces) has no login of its own, so:
 
 - APP_PASSWORD not set (the default): the pages are open to whoever has the URL. That is fine on your machine and for a test

@@ -22,8 +22,11 @@ JUNK_FILES = FIXTURES / "junk" / "files"  # 30 invented files for the junk rules
 
 # Anything a real .env or shell could carry that a test must not inherit.
 _REAL_SETTINGS = ("QUESTLIGHT_TOKEN", "QUESTLIGHT_BASE_URL", "QUESTLIGHT_ORIGIN", "QUESTLIGHT_ATTACH_RESUME", "PARSING_BASE_URL",
-                  "PERFOX_API_KEY", "PERFOX_BASE_URL", "PERFOX_WEBHOOK_URL", "PERFOX_WEBHOOK_SECRET", "MCP_TOKEN", "MCP_FILE_HOSTS",
-                  "APP_PASSWORD", "MAX_UPLOAD_MB", "VERCEL", "AUDIT_DB", "RESUME_PARSER", "MASKING_ENABLED")
+                  "PERFOX_API_KEY", "PERFOX_BASE_URL", "MCP_TOKEN", "MCP_FILE_HOSTS",
+                  "APP_PASSWORD", "MAX_UPLOAD_MB", "VERCEL", "AUDIT_DB", "RESUME_PARSER", "MASKING_ENABLED",
+                  # the agent: a real key must never reach OpenAI from a test
+                  "OPENAI_API_KEY", "OPENAI_BASE_URL", "OPENAI_MODEL", "OPENAI_REPLY_MODEL", "OPENAI_REASONING_EFFORT",
+                  "OPENAI_VERBOSITY", "OPENAI_AGENTS_TRACING", "AGENT_MAX_TURNS", "AGENT_HISTORY_MESSAGES")
 
 _results = []
 
@@ -34,6 +37,7 @@ def isolate(**env) -> Path:
     sys.path.insert(0, str(ROOT))
     sys.path.insert(0, str(ROOT / "tests"))
     os.environ["SKIP_DOTENV"] = "1"
+    os.environ["OPENAI_AGENTS_DISABLE_TRACING"] = "1"
     for name in _REAL_SETTINGS:
         os.environ.pop(name, None)
     tmp = Path(tempfile.mkdtemp())

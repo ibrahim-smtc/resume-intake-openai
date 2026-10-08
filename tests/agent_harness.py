@@ -3,7 +3,7 @@
 - Questlight's profile creation recorded and stubbed (nothing is written anywhere),
 - resume "downloads" read from disk (https://files.test/<name>) and the job list pre-filled.
 
-Call after harness.isolate(). The tests then talk to /mcp with the real MCP client, exactly as Perfox does."""
+Call after harness.isolate(). The tests then talk to /mcp with the real MCP client, as any MCP client does."""
 import contextlib
 import copy
 import os
@@ -79,7 +79,7 @@ def start(parsed_by_stem: dict, files: dict = None, token: str = "test-token-123
 
 @contextlib.asynccontextmanager
 async def session(fakes: Fakes):
-    """An MCP client session, like Perfox's."""
+    """An MCP client session."""
     from mcp import ClientSession
     from mcp.client.streamable_http import streamablehttp_client
     async with streamablehttp_client(fakes.url, headers=fakes.headers) as (read, write, _):
